@@ -1,0 +1,7 @@
+
+id_venta,fecha,sucursal,codigo_producto,producto,cantidad,precio_unitario,vendedor
+V001,2026-10-01,Chiquimula,TEC001,Teclado,2,250.00,Carlos
+V002,2026-10-02,Guatemala,MOU001,Mouse,3,75.50,Ana
+V003,2026-10-03,Zacapa,MON001,Monitor,1,1200.00,Pedro
+V004,fecha-invalida,Chiquimula,TEC002,Audifonos,2,150.00,Maria
+V005,2026-10-05,Zacapa,USB001,Memoria USB,4,45.00,Pedro

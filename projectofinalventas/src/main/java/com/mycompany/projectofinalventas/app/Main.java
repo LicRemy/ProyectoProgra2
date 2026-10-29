@@ -1,31 +1,40 @@
 
 package com.mycompany.projectofinalventas.app;
 
+import com.mycompany.projectofinalventas.lectores.LectorCSV;
 import com.mycompany.projectofinalventas.modelo.RegistroVenta;
-import java.math.BigDecimal;
-import java.time.LocalDate;
+
+import java.util.ArrayList;
 
 public class Main {
 
     public static void main(String[] args) {
 
-        System.out.println("SISTEMA DE ANALISIS DE VENTAS");
+        System.out.println("=== SISTEMA DE ANALISIS DE VENTAS ===");
 
-        // Registro de prueba, no datos definitivos
-        RegistroVenta venta = new RegistroVenta(
-                "V001",
-                LocalDate.of(2026, 10, 29),
-                "Chiquimula",
-                "TEC001",
-                "Teclado",
-                2,
-                new BigDecimal("250.00"),
-                "Carlos"
-        );
+        // Crear nuestro lector
+        LectorCSV lector = new LectorCSV();
 
-        System.out.println("ID: " + venta.getIdVenta());
-        System.out.println("Producto: " + venta.getProducto());
-        System.out.println("Cantidad: " + venta.getCantidad());
-        System.out.println("Total: Q" + venta.calcularTotal());
+        // Leer archivo de prueba
+        ArrayList<RegistroVenta> ventas =
+                lector.leer("entrada/ventas.csv");
+
+        System.out.println("\nREGISTROS LEIDOS: " + ventas.size());
+
+        // Mostrar los registros obtenidos
+        for (RegistroVenta venta : ventas) {
+
+            System.out.println("------------------------");
+
+            System.out.println("ID: " + venta.getIdVenta());
+            System.out.println("Fecha: " + venta.getFecha());
+            System.out.println("Sucursal: " + venta.getSucursal());
+            System.out.println("Producto: " + venta.getProducto());
+            System.out.println("Cantidad: " + venta.getCantidad());
+            System.out.println("Vendedor: " + venta.getVendedor());
+
+            System.out.println(
+                    "Total: Q" + venta.calcularTotal());
+        }
     }
 }
