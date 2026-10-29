@@ -10,3 +10,5 @@ Explicación cada commit:
 3. Primero importamos arraylist para crear el inventario, creamos el inventario, agregamos productos, recorremos el inventario y contamos los productos
 
 4. implentar scanner y switch para crear el menu 
+
+5. agregamos 2 metodos a productos hayexistencias() y vender() para poder registrar ventas

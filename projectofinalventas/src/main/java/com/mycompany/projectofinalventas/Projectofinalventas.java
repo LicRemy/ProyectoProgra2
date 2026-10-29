@@ -7,33 +7,28 @@ import java.util.Scanner;
 public class Projectofinalventas {
 
     public static void main(String[] args) {
-        
-        //registra teclado
-        Scanner teclado = new Scanner(System.in);
 
-        //array inventario
+        Scanner teclado = new Scanner(System.in);
         ArrayList<Producto> inventario = new ArrayList<>();
 
-        // Productos iniciales de prueba
+        // Productos iniciales
         inventario.add(new Producto("Teclado", 250.00, 10));
         inventario.add(new Producto("Mouse", 75.50, 5));
         inventario.add(new Producto("Monitor", 1200.00, 3));
 
-        //variable para menu
         int opcion = 0;
-        
-        //lista de opciones para menu
-        while (opcion != 4) {
+
+        while (opcion != 5) {
 
             System.out.println("\n===== SISTEMA DE VENTAS =====");
             System.out.println("1. Agregar producto");
             System.out.println("2. Mostrar inventario");
             System.out.println("3. Buscar producto");
-            System.out.println("4. Salir");
+            System.out.println("4. Registrar venta");
+            System.out.println("5. Salir");
 
             System.out.print("Seleccione una opcion: ");
 
-            //registra el numero que pulsamos, else en caso no sea valido
             if (teclado.hasNextInt()) {
                 opcion = teclado.nextInt();
                 teclado.nextLine();
@@ -43,10 +38,8 @@ public class Projectofinalventas {
                 continue;
             }
 
-            //switch para ir a las opciones del menu
             switch (opcion) {
-                
-                //caso 1 de agregar producto
+
                 case 1:
                     System.out.println("\nAGREGAR PRODUCTO");
 
@@ -81,10 +74,9 @@ public class Projectofinalventas {
 
                     inventario.add(nuevo);
 
-                    System.out.println("Producto agregado correctamente.");
+                    System.out.println("Producto agregado.");
                     break;
 
-                    //caso 2 de mostrar inventario
                 case 2:
                     System.out.println("\nINVENTARIO");
 
@@ -98,16 +90,17 @@ public class Projectofinalventas {
                     }
                     break;
 
-                    //caso 3 buscador de producto
                 case 3:
                     System.out.println("\nBUSCAR PRODUCTO");
-                    System.out.print("Ingrese el nombre: ");
+                    System.out.print("Nombre: ");
 
                     String busqueda = teclado.nextLine();
                     boolean encontrado = false;
 
                     for (Producto p : inventario) {
-                        if (p.nombre.equalsIgnoreCase(busqueda.trim())) {
+                        if (p.nombre.equalsIgnoreCase(
+                                busqueda.trim())) {
+
                             p.mostrarInformacion();
                             encontrado = true;
                         }
@@ -118,8 +111,63 @@ public class Projectofinalventas {
                     }
                     break;
 
-                    //caso 4 salir del sistema
                 case 4:
+                    System.out.println("\nREGISTRAR VENTA");
+
+                    System.out.print("Producto a vender: ");
+                    String productoVenta = teclado.nextLine();
+
+                    Producto seleccionado = null;
+
+                    // Buscar el producto
+                    for (Producto p : inventario) {
+                        if (p.nombre.equalsIgnoreCase(
+                                productoVenta.trim())) {
+                            seleccionado = p;
+                            break;
+                        }
+                    }
+
+                    if (seleccionado == null) {
+                        System.out.println("Producto no encontrado.");
+                        break;
+                    }
+
+                    // Mostrar informacion
+                    seleccionado.mostrarInformacion();
+
+                    System.out.print("Unidades a vender: ");
+
+                    if (!teclado.hasNextInt()) {
+                        System.out.println("Cantidad invalida.");
+                        teclado.nextLine();
+                        break;
+                    }
+
+                    int unidades = teclado.nextInt();
+                    teclado.nextLine();
+
+                    // Verificar existencias
+                    if (!seleccionado.hayExistencias(unidades)) {
+                        System.out.println(
+                                "Cantidad invalida o existencias insuficientes.");
+                        break;
+                    }
+
+                    // Registrar venta
+                    double total = seleccionado.vender(unidades);
+
+                    System.out.println("\n===== FACTURA =====");
+                    System.out.println("Producto: "
+                            + seleccionado.nombre);
+                    System.out.println("Unidades: " + unidades);
+                    System.out.printf("Total: Q%.2f%n", total);
+                    System.out.println("Venta realizada correctamente.");
+                    System.out.println("Existencias restantes: "
+                            + seleccionado.cantidad);
+                    break;
+
+                case 5:
                     System.out.println("Saliendo del sistema...");
                     break;
 
