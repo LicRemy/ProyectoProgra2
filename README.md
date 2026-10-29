@@ -12,3 +12,5 @@ Explicación cada commit:
 4. implentar scanner y switch para crear el menu 
 
 5. agregamos 2 metodos a productos hayexistencias() y vender() para poder registrar ventas
+
+6. creamos clase de ventas y creamos el historial de ingresos 

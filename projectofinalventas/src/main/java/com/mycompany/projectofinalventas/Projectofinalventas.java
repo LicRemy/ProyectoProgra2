@@ -10,6 +10,7 @@ public class Projectofinalventas {
 
         Scanner teclado = new Scanner(System.in);
         ArrayList<Producto> inventario = new ArrayList<>();
+        ArrayList<Venta> historial = new ArrayList<>();
 
         // Productos iniciales
         inventario.add(new Producto("Teclado", 250.00, 10));
@@ -18,15 +19,15 @@ public class Projectofinalventas {
 
         int opcion = 0;
 
-        while (opcion != 5) {
+        while (opcion != 6) {
 
             System.out.println("\n===== SISTEMA DE VENTAS =====");
             System.out.println("1. Agregar producto");
             System.out.println("2. Mostrar inventario");
             System.out.println("3. Buscar producto");
             System.out.println("4. Registrar venta");
-            System.out.println("5. Salir");
-
+            System.out.println("5. Historial y reporte de ingresos");
+            System.out.println("6. Salir");
             System.out.print("Seleccione una opcion: ");
 
             if (teclado.hasNextInt()) {
@@ -156,6 +157,14 @@ public class Projectofinalventas {
 
                     // Registrar venta
                     double total = seleccionado.vender(unidades);
+                    
+                    Venta nuevaVenta = new Venta(
+                        seleccionado.nombre,
+                        unidades,
+                        seleccionado.precio
+                    );
+
+                    historial.add(nuevaVenta);
 
                     System.out.println("\n===== FACTURA =====");
                     System.out.println("Producto: "
@@ -167,7 +176,36 @@ public class Projectofinalventas {
                             + seleccionado.cantidad);
                     break;
 
-                case 5:
+                     
+                    case 5:
+    System.out.println("\n===== HISTORIAL DE VENTAS =====");
+
+    if (historial.isEmpty()) {
+
+        System.out.println("Todavia no se han realizado ventas.");
+
+    } else {
+
+        double ingresosTotales = 0;
+
+        for (Venta v : historial) {
+
+            v.mostrarVenta();
+
+            ingresosTotales = ingresosTotales + v.total;
+        }
+
+        System.out.println("\n===== REPORTE GENERAL =====");
+        System.out.println("Numero de ventas: "
+                + historial.size());
+
+        System.out.printf("Ingresos totales: Q%.2f%n",
+                ingresosTotales);
+    }
+    break;
+
+
+                case 6:
                     System.out.println("Saliendo del sistema...");
                     break;
 
