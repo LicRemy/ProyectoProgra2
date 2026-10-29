@@ -13,4 +13,6 @@ Explicación cada commit:
 
 5. agregamos 2 metodos a productos hayexistencias() y vender() para poder registrar ventas
 
-6. creamos clase de ventas y creamos el historial de ingresos 
+6. creamos clase de ventas y creamos el historial de ingresos
+
+7. dejamos prototipo de aprendizaje
