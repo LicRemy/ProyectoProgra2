@@ -16,3 +16,5 @@ Explicación cada commit:
 6. creamos clase de ventas y creamos el historial de ingresos
 
 7. dejamos prototipo de aprendizaje
+
+8. creamos nuevos paquetes 
