@@ -8,3 +8,5 @@ Explicación cada commit:
 2. Se crea la clase producto y se prueba mostrarInformacion()
 
 3. Primero importamos arraylist para crear el inventario, creamos el inventario, agregamos productos, recorremos el inventario y contamos los productos
+
+4. implentar scanner y switch para crear el menu 
