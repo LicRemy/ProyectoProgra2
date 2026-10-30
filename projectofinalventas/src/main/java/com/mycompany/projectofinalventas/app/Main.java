@@ -1,11 +1,14 @@
 
+
 package com.mycompany.projectofinalventas.app;
+
 
 import com.mycompany.projectofinalventas.modelo.RegistroVenta;
 import com.mycompany.projectofinalventas.lectores.LectorCSV;
 import com.mycompany.projectofinalventas.lectores.LectorJSON;
 import com.mycompany.projectofinalventas.lectores.LectorXML;
 import com.mycompany.projectofinalventas.validacion.DeduplicadorVentas;
+import com.mycompany.projectofinalventas.datos.VentaDAO;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.SQLException;
 
 public class Main {
 
@@ -58,6 +62,50 @@ public class Main {
 
         List<RegistroVenta> ventasUnicas =
                 deduplicador.eliminarDuplicados(ventas, errores);
+        
+        
+VentaDAO dao = new VentaDAO();
+
+int insertadas = 0;
+int existentes = 0;
+int fallosBD = 0;
+
+for (RegistroVenta venta : ventasUnicas) {
+
+    try {
+        boolean insertada = dao.insertar(venta);
+
+        if (insertada) {
+            insertadas++;
+        } else {
+            existentes++;
+        }
+
+    } catch (SQLException e) {
+        fallosBD++;
+
+        errores.add(
+                "Error SQL en venta "
+                + venta.getIdVenta()
+                + ": " + e.getMessage());
+    }
+}
+
+System.out.println("\n=== RESULTADO POSTGRESQL ===");
+
+System.out.println("Ventas insertadas: " + insertadas);
+System.out.println("Ya existentes en BD: " + existentes);
+System.out.println("Fallos SQL: " + fallosBD);
+
+try {
+    System.out.println(
+            "Total almacenadas: " + dao.contarVentas());
+
+} catch (SQLException e) {
+    System.out.println(
+            "Error consultando total: " + e.getMessage());
+}
+
 
         // Mostrar las ventas unicas
         System.out.println("\n=== VENTAS UNICAS ===");
