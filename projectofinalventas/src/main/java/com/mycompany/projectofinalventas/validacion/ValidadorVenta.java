@@ -54,18 +54,38 @@ public class ValidadorVenta {
             errores.add("Vendedor vacio");
         }
 
+        if (venta.getFecha() != null
+                && (venta.getFecha().getYear() < 1 || venta.getFecha().getYear() > 9999)) {
+            errores.add("Fecha fuera del rango 0001-9999");
+        }
+        longitud(venta.getIdVenta(), 50, "id_venta", errores);
+        longitud(venta.getSucursal(), 100, "sucursal", errores);
+        longitud(venta.getCodigoProducto(), 50, "codigo_producto", errores);
+        longitud(venta.getProducto(), 150, "producto", errores);
+        longitud(venta.getVendedor(), 100, "vendedor", errores);
+        if (precio != null && (precio.stripTrailingZeros().scale() > 2
+                || precio.abs().compareTo(new BigDecimal("9999999999.99")) > 0)) {
+            errores.add("Precio incompatible con NUMERIC(12,2); no se redondea automaticamente");
+        }
+
         return errores;
     }
 
     // Comprueba si un texto esta vacio
+    private void longitud(String texto, int limite, String campo, List<String> errores) {
+        if (texto != null && texto.codePointCount(0, texto.length()) > limite)
+            errores.add(campo + " excede " + limite + " caracteres");
+    }
+
     private boolean vacio(String texto) {
-        return texto == null || texto.trim().isEmpty();
+        return texto == null || texto.strip().isEmpty();
     }
 
     // Limpia textos sin cambiar cantidades o fechas
     public RegistroVenta normalizar(RegistroVenta venta) {
 
-        return new RegistroVenta(
+        if (venta == null) return null;
+        RegistroVenta resultado = new RegistroVenta(
                 limpiarMayusculas(venta.getIdVenta()),
                 venta.getFecha(),
                 limpiarMayusculas(venta.getSucursal()),
@@ -75,6 +95,8 @@ public class ValidadorVenta {
                 venta.getPrecioUnitario(),
                 limpiarEspacios(venta.getVendedor())
         );
+        resultado.setOrigen(venta.getOrigen());
+        return resultado;
     }
 
     private String limpiarEspacios(String texto) {
@@ -82,7 +104,7 @@ public class ValidadorVenta {
             return null;
         }
 
-        return texto.trim().replaceAll("\\s+", " ");
+        return texto.replaceAll("(?U)\\s+", " ").strip();
     }
 
     private String limpiarMayusculas(String texto) {

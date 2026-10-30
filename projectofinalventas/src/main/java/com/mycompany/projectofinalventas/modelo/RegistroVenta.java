@@ -14,6 +14,7 @@ public class RegistroVenta {
     private int cantidad;
     private BigDecimal precioUnitario;
     private String vendedor;
+    private String origen = "origen no disponible";
 
     public RegistroVenta(
             String idVenta,
@@ -65,6 +66,26 @@ public class RegistroVenta {
 
     public String getVendedor() {
         return vendedor;
+    }
+
+    public String getOrigen() { return origen; }
+
+    public void setOrigen(String origen) { this.origen = origen; }
+
+    /** Compara el contenido sin confundir escala decimal o mayusculas con cambios. */
+    public boolean mismosDatos(RegistroVenta otra) {
+        return otra != null && igual(idVenta, otra.idVenta)
+                && java.util.Objects.equals(fecha, otra.fecha)
+                && igual(sucursal, otra.sucursal)
+                && igual(codigoProducto, otra.codigoProducto)
+                && igual(producto, otra.producto) && cantidad == otra.cantidad
+                && precioUnitario.compareTo(otra.precioUnitario) == 0
+                && igual(vendedor, otra.vendedor);
+    }
+
+    private static boolean igual(String a, String b) {
+        return a != null && b != null && a.strip().replaceAll("(?U)\\s+", " ")
+                .equalsIgnoreCase(b.strip().replaceAll("(?U)\\s+", " "));
     }
 
     public BigDecimal calcularTotal() {

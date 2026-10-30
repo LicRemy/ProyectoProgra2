@@ -1,0 +1,2 @@
+id_venta,fecha,sucursal,codigo_producto,producto,cantidad,precio_unitario,vendedor
+PRUEBA-C1,2026-10-01,Guatemala,P1,"Teclado, USB",1,12.50,Ana

@@ -1,247 +1,109 @@
-
 package com.mycompany.projectofinalventas.reportes;
 
-import com.mycompany.projectofinalventas.datos.ConexionBD;
+import com.mycompany.projectofinalventas.analisis.AnalizadorVentas;
 import com.mycompany.projectofinalventas.modelo.EstadisticasProcesamiento;
-
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
 
 public class GeneradorReportes {
+    public void generar(EstadisticasProcesamiento e, List<String> errores) throws IOException, SQLException {
+        generar(e, errores, Path.of("."));
+    }
 
-    public void generar(
-            EstadisticasProcesamiento e,
-            List<String> errores)
+    public void generar(EstadisticasProcesamiento e, List<String> errores, Path salida)
             throws IOException, SQLException {
-
-        StringBuilder reporte = new StringBuilder();
-
-        reporte.append(
-                "SISTEMA DE INTEGRACION Y ANALISIS DE VENTAS\n");
-        reporte.append("=========================================\n\n");
-
-        reporte.append("ESTADISTICAS DE ESTA EJECUCION\n");
-        reporte.append("--------------------------------\n");
-
-        reporte.append("Registros recibidos: ")
-                .append(e.recibidos).append("\n");
-
-        reporte.append("Validos antes de duplicados: ")
-                .append(e.validos).append("\n");
-
-        reporte.append("Rechazados por validacion: ")
-                .append(e.rechazados).append("\n");
-
-        reporte.append("Duplicados entre archivos: ")
-                .append(e.duplicados).append("\n");
-
-        reporte.append("Registros unicos: ")
-                .append(e.unicos).append("\n");
-
-        reporte.append(String.format(Locale.ROOT,
-                "Porcentaje de rechazados: %.2f%%%n",
-                e.porcentajeRechazados()));
-
-        reporte.append("Insertados en PostgreSQL: ")
-                .append(e.insertados).append("\n");
-
-        reporte.append("Ya existentes en PostgreSQL: ")
-                .append(e.existentesBD).append("\n");
-
-        reporte.append("Fallos de insercion SQL: ")
-                .append(e.fallosBD).append("\n");
-
-        reporte.append("Archivos fallidos: ")
-                .append(e.archivosFallidos).append("\n\n");
-
-        // Consultas sobre el contenido consolidado de PostgreSQL
-        try (Connection cn = ConexionBD.conectar()) {
-
-            agregarConsulta(reporte, cn,
-                    "RESUMEN GENERAL",
-                    """
-                    SELECT COUNT(*) AS cantidad,
-                           COALESCE(SUM(cantidad * precio_unitario), 0)
-                               AS monto,
-                           COALESCE(AVG(cantidad * precio_unitario), 0)
-                               AS promedio
-                    FROM ventas
-                    """,
-                    true);
-
-            agregarConsulta(reporte, cn,
-                    "VENTAS POR MES",
-                    """
-                    SELECT TO_CHAR(fecha, 'YYYY-MM') AS etiqueta,
-                           COUNT(*) AS transacciones,
-                           SUM(cantidad * precio_unitario) AS monto
-                    FROM ventas
-                    GROUP BY TO_CHAR(fecha, 'YYYY-MM')
-                    ORDER BY etiqueta
-                    """, false);
-
-            agregarConsulta(reporte, cn,
-                    "VENTAS POR SUCURSAL",
-                    """
-                    SELECT sucursal AS etiqueta,
-                           COUNT(*) AS transacciones,
-                           SUM(cantidad * precio_unitario) AS monto
-                    FROM ventas
-                    GROUP BY sucursal
-                    ORDER BY monto DESC, etiqueta
-                    """, false);
-
-            agregarConsulta(reporte, cn,
-                    "VENTAS POR PRODUCTO",
-                    """
-                    SELECT codigo_producto || ' - ' || producto
-                               AS etiqueta,
-                           COUNT(*) AS transacciones,
-                           SUM(cantidad * precio_unitario) AS monto
-                    FROM ventas
-                    GROUP BY codigo_producto, producto
-                    ORDER BY monto DESC, etiqueta
-                    """, false);
-
-            agregarConsulta(reporte, cn,
-                    "VENTAS POR VENDEDOR",
-                    """
-                    SELECT vendedor AS etiqueta,
-                           COUNT(*) AS transacciones,
-                           SUM(cantidad * precio_unitario) AS monto
-                    FROM ventas
-                    GROUP BY vendedor
-                    ORDER BY monto DESC, etiqueta
-                    """, false);
-
-            agregarConsulta(reporte, cn,
-                    "TOP 3 VENDEDORES",
-                    """
-                    SELECT vendedor AS etiqueta,
-                           COUNT(*) AS transacciones,
-                           SUM(cantidad * precio_unitario) AS monto
-                    FROM ventas
-                    GROUP BY vendedor
-                    ORDER BY monto DESC, etiqueta
-                    LIMIT 3
-                    """, false);
-
-            String productos = """
-                    SELECT codigo_producto || ' - ' || producto
-                               AS etiqueta,
-                           COUNT(*) AS transacciones,
-                           SUM(cantidad * precio_unitario) AS monto
-                    FROM ventas
-                    GROUP BY codigo_producto, producto
-                    """;
-
-            agregarConsulta(reporte, cn,
-                    "PRODUCTO CON MAYOR MONTO",
-                    productos + " ORDER BY monto DESC, etiqueta LIMIT 1",
-                    false);
-
-            agregarConsulta(reporte, cn,
-                    "PRODUCTO CON MENOR MONTO",
-                    productos + " ORDER BY monto ASC, etiqueta LIMIT 1",
-                    false);
-
-            String transacciones = """
-                    SELECT id_venta AS etiqueta,
-                           1 AS transacciones,
-                           cantidad * precio_unitario AS monto
-                    FROM ventas
-                    """;
-
-            agregarConsulta(reporte, cn,
-                    "TRANSACCION DE MAYOR MONTO",
-                    transacciones
-                            + " ORDER BY monto DESC, etiqueta LIMIT 1",
-                    false);
-
-            agregarConsulta(reporte, cn,
-                    "TRANSACCION DE MENOR MONTO",
-                    transacciones
-                            + " ORDER BY monto ASC, etiqueta LIMIT 1",
-                    false);
-        }
-
-        reporte.append("\nCONCLUSIONES DE LOS ESTUDIANTES\n");
-        reporte.append("--------------------------------\n");
-        reporte.append(
-                "PENDIENTE: redactar tres conclusiones "
-                + "por cada estudiante basadas en los datos reales.\n");
-
-        // No dejar resultados incompletos ante un error SQL
-        Files.writeString(
-                Path.of("reporte_analisis.txt"),
-                reporte.toString(),
-                StandardCharsets.UTF_8);
-
-        Files.write(
-                Path.of("errores_procesamiento.txt"),
-                errores,
-                StandardCharsets.UTF_8);
-    }
-
-    private void agregarConsulta(
-            StringBuilder reporte,
-            Connection cn,
-            String titulo,
-            String sql,
-            boolean resumen)
-            throws SQLException {
-
-        reporte.append("\n").append(titulo).append("\n");
-        reporte.append("--------------------------------\n");
-
-        try (PreparedStatement ps = cn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            boolean contieneDatos = false;
-
-            while (rs.next()) {
-                contieneDatos = true;
-
-                if (resumen) {
-                    reporte.append("Transacciones almacenadas: ")
-                            .append(rs.getLong("cantidad"))
-                            .append("\n");
-
-                    reporte.append("Monto total: ")
-                            .append(dinero(rs.getBigDecimal("monto")))
-                            .append("\n");
-
-                    reporte.append("Promedio por transaccion: ")
-                            .append(dinero(rs.getBigDecimal("promedio")))
-                            .append("\n");
-
-                } else {
-                    reporte.append(rs.getString("etiqueta"))
-                            .append(" | Transacciones: ")
-                            .append(rs.getLong("transacciones"))
-                            .append(" | Monto: ")
-                            .append(dinero(rs.getBigDecimal("monto")))
-                            .append("\n");
-                }
-            }
-
-            if (!contieneDatos) {
-                reporte.append("Sin registros.\n");
-            }
+        guardar(salida.resolve("errores_procesamiento.txt"), String.join("\n", errores)
+                + (errores.isEmpty() ? "" : "\n"));
+        try {
+            publicar(e, salida, new AnalizadorVentas().analizar());
+        } catch (SQLException ex) {
+            guardar(salida.resolve("reporte_analisis.txt"), "REPORTE INCOMPLETO: analisis SQL no disponible.\n"
+                    + "No utilizar como resultado exitoso. SQLState=" + ex.getSQLState() + "\n" + estadisticas(e));
+            throw ex;
         }
     }
 
-    private String dinero(BigDecimal valor) {
-        return "Q" + String.format(
-                Locale.ROOT, "%.2f", valor);
+    /** Variante para verificar reportes usando una conexion con tabla temporal. */
+    public void generar(EstadisticasProcesamiento e, List<String> errores, Path salida, Connection cn)
+            throws IOException, SQLException {
+        guardar(salida.resolve("errores_procesamiento.txt"), String.join("\n", errores) + "\n");
+        publicar(e, salida, new AnalizadorVentas().analizar(cn));
+    }
+
+    private void publicar(EstadisticasProcesamiento e, Path salida, String analisis) throws IOException {
+        String conclusiones = """
+
+                CONCLUSIONES PERSONALES PENDIENTES
+                --------------------------------
+                Jonathan Daniel Alberto Aguilar Ramirez:
+                1. [Redactar interpretacion propia apoyada en un indicador real]
+                2. [Explicar una limitacion o problema de calidad observado]
+                3. [Proponer una accion justificada por los resultados]
+                Luis Alberto Matta Rubio:
+                1. [Redactar interpretacion propia apoyada en un indicador real]
+                2. [Explicar una limitacion o problema de calidad observado]
+                3. [Proponer una accion justificada por los resultados]
+                """;
+        guardar(salida.resolve("reporte_analisis.txt"),
+                "SISTEMA DE INTEGRACION Y ANALISIS DE VENTAS\n"
+                + "=========================================\n"
+                + (e.archivosFallidos + e.fallosBD + e.conflictosBD > 0
+                    ? "ESTADO: CON INCIDENCIAS; ver errores_procesamiento.txt\n" : "ESTADO: PROCESAMIENTO COMPLETO\n")
+                + estadisticas(e)
+                + "\nINDICADORES ACUMULADOS EN POSTGRESQL (instantanea consistente)\n"
+                + "Los nombres se agrupan sin distinguir mayusculas; montos expresados en Q.\n"
+                + analisis + conclusiones);
+    }
+
+    private String estadisticas(EstadisticasProcesamiento e) {
+        return String.format(Locale.ROOT, """
+
+                ESTADISTICAS DE ESTA EJECUCION
+                --------------------------------
+                Archivos procesados: %d
+                Archivos fallidos: %d
+                Registros recibidos: %d
+                Validos antes de duplicados: %d
+                Aceptados unicos: %d
+                Rechazados por validacion: %d
+                Duplicados entre archivos: %d
+                Porcentaje de rechazados: %.2f%%
+                Insertados en PostgreSQL: %d
+                Ya existentes identicos en PostgreSQL: %d
+                Conflictos con PostgreSQL: %d
+                Fallos de insercion SQL: %d
+                Definicion: rechazados / recibidos * 100; cero si no hay registros.
+                recibidos = validos + rechazados; validos = unicos + duplicados.
+                unicos = insertados + existentes + conflictos + fallosBD.
+                Los archivos ilegibles no aportan registros: su cantidad es desconocida.
+                Los duplicados NO son rechazos de validacion.
+                """, e.archivosProcesados, e.archivosFallidos, e.recibidos, e.validos, e.unicos,
+                e.rechazados, e.duplicados, e.porcentajeRechazados(), e.insertados, e.existentesBD,
+                e.conflictosBD, e.fallosBD);
+    }
+
+    private void guardar(Path destino, String contenido) throws IOException {
+        Path directorio = destino.toAbsolutePath().getParent();
+        Files.createDirectories(directorio);
+        Path temporal = Files.createTempFile(directorio, "reporte-", ".tmp");
+        try {
+            Files.writeString(temporal, contenido, StandardCharsets.UTF_8);
+            try {
+                Files.move(temporal, destino.toAbsolutePath(), StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException ex) {
+                Files.move(temporal, destino.toAbsolutePath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temporal);
+        }
     }
 }

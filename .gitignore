@@ -1,2 +1,5 @@
 /projectofinalventas/target/
 /config/db.properties
+**/config/db.properties
+**/target/
+/tmp/

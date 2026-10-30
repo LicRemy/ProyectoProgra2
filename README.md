@@ -1,98 +1,135 @@
 # Sistema de Integración y Análisis de Datos de Ventas
 
-**Proyecto Final de Programación II**
+Proyecto final de Programación II. Aplicación de consola, Java 17 o superior, Maven 3.9 y PostgreSQL. Integrantes: Jonathan Daniel Alberto Aguilar Ramírez y Luis Alberto Matta Rubio.
 
-## 1. Descripción
+## Construir y ejecutar
 
-Aplicación de consola desarrollada en Java para integrar registros de ventas provenientes de archivos CSV, JSON y XML.
+Todos los comandos de esta sección se ejecutan **dentro de `projectofinalventas`**, donde está el POM.
 
-El sistema permite convertir los registros a objetos Java, validar y normalizar sus datos, detectar identificadores duplicados, almacenar ventas mediante JDBC en PostgreSQL y producir análisis estadísticos y reportes de texto.
+```powershell
+mvn clean test
+mvn package
+mvn exec:java
+```
 
-## 2. Tecnologías utilizadas
+Si Maven no está en PATH, NetBeans incluye uno. En este equipo:
 
-- Java
-- Apache NetBeans
-- Maven
-- PostgreSQL
-- pgAdmin
-- PostgreSQL JDBC Driver
-- Jackson para procesamiento JSON
-- Herramientas XML incluidas en Java
-- Git y GitHub
+```powershell
+& 'C:\Program Files\netbeans\java\maven\bin\mvn.cmd' clean test
+& 'C:\Program Files\netbeans\java\maven\bin\mvn.cmd' exec:java
+```
 
-## 3. Estructura del proyecto
+Java 17 es la versión mínima (LTS); el código y los tests no requieren Java 26. `mvn package` genera el JAR en `target` y copia bibliotecas a `target/dependency`. También puede ejecutarse sin Maven después de empaquetar:
 
-- `modelo`: clases que representan los registros y las estadísticas.
-- `lectores`: procesamiento de archivos CSV, JSON y XML.
-- `validacion`: reglas de validación, normalización y detección de duplicados.
-- `datos`: conexión JDBC y operaciones de base de datos.
-- `analisis`: consultas y cálculos estadísticos.
-- `reportes`: generación de archivos de salida.
-- `app`: inicio y coordinación del programa.
-- `sql`: script de creación de la tabla.
-- `entrada`: archivos de prueba y de procesamiento.
-- `config`: ejemplo de configuración para PostgreSQL.
+```powershell
+java -jar target/projectofinalventas-1.0-SNAPSHOT.jar
+```
 
-## 4. Configuración de PostgreSQL
+El manifiesto encuentra las bibliotecas en `target/dependency`. La entrega necesita tanto el JAR como esa carpeta, la configuración privada y las entradas.
 
-1. Iniciar PostgreSQL y abrir pgAdmin.
-2. Crear una base de datos llamada `analisis_ventas`.
-3. Abrir Query Tool conectado a esa base de datos.
-4. Ejecutar `sql/crear_base_datos.sql`.
-5. Copiar `config/db.properties.example` a `config/db.properties`.
-6. Configurar el usuario, contraseña, servidor y puerto de PostgreSQL.
+## NetBeans
 
-El archivo `config/db.properties` contiene credenciales locales y no debe subirse a GitHub.
+1. File → Open Project → elegir la carpeta `projectofinalventas`.
+2. Tools → Java Platforms → registrar un JDK 17 o superior; elegirlo en Properties → Build.
+3. Usar Reload Project si la vista conserva errores anteriores y después Clean and Build.
+4. La clase principal configurada es `com.mycompany.projectofinalventas.app.Main`.
+5. Configurar PostgreSQL como se indica abajo y usar Run Project. El directorio de trabajo debe ser `projectofinalventas`.
+6. Revisar los dos TXT generados en esa carpeta. Run File sobre `PruebaConexion` verifica solamente conectividad; `PruebaAnalisis` consulta indicadores sin insertar.
+7. El punto de entrada antiguo `Projectofinalventas` delega en `Main`; ya no utiliza el prototipo de inventario.
 
-## 5. Ejecución
+La compilación y la ejecución se verifican por Maven/Java; los pasos de la interfaz de NetBeans se documentan para reproducirlos, no sustituyen las pruebas.
 
-1. Abrir el proyecto Maven en NetBeans.
-2. Verificar que las dependencias estén disponibles.
-3. Ejecutar Clean and Build.
-4. Colocar los archivos de entrada en la carpeta `entrada`.
-5. Ejecutar `com.mycompany.projectofinalventas.app.Main`.
-6. Revisar los resultados en consola y los archivos TXT generados.
+## PostgreSQL y credenciales
 
-La ejecución presupone que el directorio de trabajo corresponde a la raíz del proyecto.
+Crear la base `analisis_ventas` desde pgAdmin. Con Query Tool conectado a esa base, ejecutar `sql/crear_base_datos.sql`. Es SQL de PostgreSQL: no utiliza `USE` ni `CREATE DATABASE IF NOT EXISTS`.
 
-## 6. Reglas de procesamiento
+Copiar `config/db.properties.example` a `config/db.properties` y completar usuario y contraseña **localmente**. La copia privada está ignorada por Git. Alternativas: variables `DB_URL`, `DB_USER`, `DB_PASSWORD` (tienen prioridad) o `-Ddb.config=otra/ruta.properties`. Nunca poner una contraseña en un comando, README, captura o commit.
 
-Cada registro debe contener identificador de venta, fecha, sucursal, código de producto, nombre de producto, cantidad, precio unitario y vendedor.
+`CREATE TABLE IF NOT EXISTS` no migra una tabla existente. El script nuevo verifica ID canónico, textos no vacíos, fechas, cantidades y precios positivos. No se modificó el esquema ni el contenido personal durante la auditoría. Revisar restricciones antiguas antes de una migración manual.
 
-Se rechazan registros con campos obligatorios vacíos, fechas inválidas, cantidades no positivas o precios no positivos.
+**Acción humana pendiente:** el archivo privado estuvo registrado en el historial anterior. Se retiró del índice conservándolo en disco. Revisar la exposición y rotar la contraseña si fue publicada; ignorar un archivo no borra commits antiguos. No se reescribió ni publicó el historial.
 
-Se normalizan espacios sobrantes e identificadores, sucursales y códigos de producto a mayúsculas.
+## Entradas y contrato
 
-Los duplicados entre los archivos de una misma ejecución se detectan por `id_venta`. PostgreSQL utiliza una clave primaria para evitar nuevas inserciones de IDs existentes.
+Sin argumentos, el programa descubre todos los archivos `.csv`, `.json` y `.xml` directamente dentro de `entrada`, ordenados por nombre. No recorre subcarpetas. Añadir archivos con la misma estructura no requiere cambiar código.
 
-## 7. Análisis disponibles
+```powershell
+mvn "-Dentrada=otra_carpeta" "-Dsalida=salida_nueva" exec:java
+mvn '-Dexec.args=entrada/ventas.csv entrada/ventas.json entrada/ventas.xml' exec:java
+mvn "-DsoloLectura=true" exec:java
+```
 
-El programa calcula total vendido, promedio por transacción, ventas por mes, sucursal, producto y vendedor, productos y transacciones con montos extremos y los tres vendedores con mayor monto vendido.
+Los argumentos explícitos son rutas individuales y establecen el orden de preferencia para duplicados. Para rutas con espacios se necesitan comillas dentro de `exec.args`. El modo `soloLectura` impide cambios en tablas permanentes mediante transacciones PostgreSQL de solo lectura: sirve para verificar IDs existentes; los nuevos generarán incidencias SQL y no se insertarán.
 
-Los indicadores económicos se obtienen mediante consultas SQL sobre PostgreSQL.
+Los ocho campos obligatorios son:
 
-## 8. Reportes
+| Campo | Regla |
+| --- | --- |
+| id_venta | No vacío, máximo 50 caracteres |
+| fecha | Fecha real ISO `yyyy-MM-dd`, años 0001–9999 |
+| sucursal | No vacía, máximo 100 |
+| codigo_producto | No vacío, máximo 50 |
+| producto | No vacío, máximo 150 |
+| cantidad | Entero de 32 bits, mayor que cero |
+| precio_unitario | Positivo, máximo 9999999999.99 y hasta 2 decimales significativos |
+| vendedor | No vacío, máximo 100 |
 
-- `reporte_analisis.txt`: estadísticas del procesamiento y análisis de ventas almacenadas.
-- `errores_procesamiento.txt`: incidencias de validación, lectura y registros duplicados.
+UTF-8; decimal con punto. No se inventan campos, fechas ni cantidades. Los precios incompatibles con `NUMERIC(12,2)` se rechazan para evitar redondearlos silenciosamente.
 
-## 9. Decisiones técnicas
+- CSV: encabezados con esos ocho nombres, cualquier orden y mayúsculas/minúsculas. Admite BOM UTF-8, líneas vacías, comas dentro de comillas, comillas dobles escapadas y campos multilínea (Apache Commons CSV). El número mostrado es el de registro lógico CSV, incluido el encabezado; no siempre coincide con la línea física.
+- JSON: arreglo de objetos con esos campos. Valores de texto o numéricos; null equivale a campo vacío. Rechaza campos desconocidos, claves duplicadas, booleanos y objetos anidados. No admite un envoltorio `{"ventas": ...}`, porque no aparece en las entradas originales.
+- XML: raíz `ventas`, hijos directos `venta` y los ocho campos como elementos de texto. Se aceptan mayúsculas/minúsculas en etiquetas. No admite campos repetidos, desconocidos o anidados ni atributos en ventas individuales. Se bloquean DTD y entidades externas.
+- Un archivo físicamente vacío o un documento mal formado es un fallo de archivo. Un CSV con solo encabezados, `[]` y `<ventas/>` son colecciones válidas de cero registros. Si falla la estructura completa, no se aceptan fragmentos parciales de ese archivo.
+- Campos vacíos o valores inválidos rechazan solo el registro; los demás continúan.
 
-Se utilizó una arquitectura por paquetes y responsabilidades para facilitar la comprensión y el mantenimiento.
+No se presuponen alias ni estructuras privadas del docente. Para una nueva estructura real, adaptar su lector y agregar una prueba antes de aceptarla.
 
-La conexión a PostgreSQL se realiza mediante JDBC y `PreparedStatement`.
+## Normalización y duplicados
 
-Los recursos de entrada/salida y las conexiones de base de datos se cierran mediante `try-with-resources`.
+Se recortan y colapsan espacios Unicode. ID, sucursal y código se convierten a mayúsculas con Locale.ROOT. Producto y vendedor conservan su presentación; las consultas SQL agrupan sin distinguir mayúsculas. No se eliminan tildes ni se fusionan nombres distintos.
 
-Se utiliza `BigDecimal` para los valores monetarios.
+La deduplicación usa ID normalizado. Se conserva el **primer registro válido** en el orden de archivos indicado. Un duplicado idéntico y uno con contenido contradictorio generan mensajes distintos con ambos orígenes. No se considera duplicado un registro inválido previamente rechazado.
 
-## 10. Pruebas y limitaciones
+JDBC usa PreparedStatement y try-with-resources. La clave primaria y `ON CONFLICT DO NOTHING` evitan nuevas filas con el mismo ID. Si PostgreSQL ya contiene ese ID con datos diferentes, se conserva la venta almacenada y se registra conflicto; no se hace UPDATE. Las tablas antiguas con IDs sin normalizar requieren revisión; la aplicación también busca con `upper(btrim(id_venta))`.
 
-Antes de la entrega deben verificarse los lectores con los archivos oficiales, los casos límite, el conteo exacto de registros, las ejecuciones repetidas y la coincidencia entre consultas SQL y reportes.
+## Contadores e indicadores
 
-Las versiones iniciales de los lectores fueron desarrolladas usando archivos de prueba con estructuras conocidas. Su compatibilidad con variantes adicionales debe comprobarse y documentarse.
+Las estadísticas de ejecución están separadas de los acumulados SQL:
 
-## 11. Integrantes
+```text
+recibidos = validos + rechazados
+validos = unicos + duplicados
+unicos = insertados + existentesBD + conflictosBD + fallosBD
+porcentajeRechazados = rechazados / recibidos * 100
+```
 
-- Integrante 1: Jonathan Daniel Alberto Aguilar Ramírez
-- Integrante 2: Luis Alberto Matta Rubio
+Si recibidos es cero, el porcentaje es cero. Un archivo ilegible se cuenta en archivosFallidos; no se inventa cuántos registros contenía. Un registro rechazado puede tener varios motivos pero se cuenta una sola vez. Duplicados y conflictos de persistencia son incidencias independientes de los rechazos de validación.
+
+SQL calcula cantidad almacenada, SUM(cantidad * precio_unitario), AVG por venta, agrupaciones por mes/sucursal/producto/vendedor, extremos y top 3 vendedores. Los empates se resuelven por etiqueta para obtener resultados reproducibles. Los nombres se agrupan con UPPER y los montos se muestran en quetzales. El análisis usa una instantánea REPEATABLE READ de solo lectura.
+
+## Reportes y conclusiones
+
+`reporte_analisis.txt` contiene estadísticas de ejecución y consultas acumuladas. `errores_procesamiento.txt` identifica archivo, registro, ID cuando está disponible y motivo. Se escriben en UTF-8 mediante archivos temporales y reemplazo atómico cuando el sistema lo permite.
+
+Si falla SQL, se conserva el registro de incidencias y el análisis queda marcado **INCOMPLETO**. Solo se anuncia éxito después de escribir ambos archivos. Los seis apartados de conclusiones personales siguen pendientes y deben redactarlos los dos estudiantes a partir de datos comprobados. No se generan conclusiones ficticias.
+
+## Pruebas
+
+```powershell
+mvn clean test
+mvn "-Dpg.integration=true" test
+```
+
+La primera orden ejecuta pruebas sin necesitar PostgreSQL y omite explícitamente las de integración. La segunda exige PostgreSQL configurado: no marca como aprobada una conexión ausente.
+
+Las pruebas de integración crean `pg_temp.ventas`, restringen el search_path a `pg_temp`, verifican que sea temporal y usan ROLLBACK. Comparan una huella de `public.ventas` antes y después. Nunca insertan ni eliminan ventas personales. El usuario JDBC necesita permiso TEMP y SELECT sobre public.ventas para esa verificación.
+
+Los casos están en `src/test/java` y ejemplos adicionales en `src/test/resources/casos`. No copiar casos deliberadamente inválidos a entrada salvo para ensayarlos. Evidencias y límites de verificación: [AUDITORIA.md](AUDITORIA.md) en la raíz del repositorio.
+
+## Documentación y defensa
+
+En la raíz: `GUIA_DEFENSA.md`, `AUDITORIA.md`, `docs/RESUMEN_COMMIT.md` y `output/pdf/documento_explicativo.pdf`. El enunciado local fue encontrado y leído; sus puntajes contradictorios deben consultarse con el docente. Los casos privados no están disponibles y no se afirma haberlos superado.
+
+La fuente editable del documento es `docs/DOCUMENTO_EXPLICATIVO.md`. Para regenerar el PDF se necesita Python con ReportLab y ejecutar `python docs/generar_documento.py` desde la raíz del repositorio. Python no es necesario para ejecutar la aplicación Java.
+
+El historial existente se conserva. No se hicieron commits de autoría inventada ni push. La participación progresiva de ambos integrantes debe ser real y demostrable.

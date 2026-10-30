@@ -1,100 +1,63 @@
-
 package com.mycompany.projectofinalventas.lectores;
 
+import com.fasterxml.jackson.core.StreamReadFeature;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.mycompany.projectofinalventas.modelo.RegistroVenta;
-import com.mycompany.projectofinalventas.validacion.ValidadorVenta;
-
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.file.Path;
-import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class LectorJSON {
-
-    private final ValidadorVenta validador =
-            new ValidadorVenta();
-
-    public List<RegistroVenta> leer(
-            String ruta, List<String> errores) {
-
+    public List<RegistroVenta> leer(String ruta, List<String> errores) {
         List<RegistroVenta> ventas = new ArrayList<>();
-
-        ObjectMapper mapper = new ObjectMapper();
-
+        ObjectMapper mapper = JsonMapper.builder()
+                .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+                .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build();
+        final JsonNode raiz;
         try {
-            JsonNode raiz = mapper.readTree(Path.of(ruta).toFile());
-
-            if (raiz == null || !raiz.isArray()) {
-                throw new IllegalStateException(
-                        "El JSON debe contener una lista de ventas");
-            }
-
-            int numero = 0;
-
-            for (JsonNode nodo : raiz) {
-                numero++;
-
-                String referencia = ruta + " registro " + numero;
-
-                try {
-                    if (!nodo.isObject()) {
-                        throw new IllegalArgumentException(
-                                "El registro no es un objeto");
-                    }
-
-                    RegistroVenta original = new RegistroVenta(
-                            texto(nodo, "id_venta"),
-                            LocalDate.parse(texto(nodo, "fecha").trim()),
-                            texto(nodo, "sucursal"),
-                            texto(nodo, "codigo_producto"),
-                            texto(nodo, "producto"),
-                            Integer.parseInt(
-                                    texto(nodo, "cantidad").trim()),
-                            new BigDecimal(
-                                    texto(nodo, "precio_unitario").trim()),
-                            texto(nodo, "vendedor")
-                    );
-
-                    RegistroVenta normalizada =
-                            validador.normalizar(original);
-
-                    List<String> problemas =
-                            validador.validar(normalizada);
-
-                    if (problemas.isEmpty()) {
-                        ventas.add(normalizada);
-                    } else {
-                        errores.add(referencia + " ID="
-                                + normalizada.getIdVenta()
-                                + ": " + String.join("; ", problemas));
-                    }
-
-                } catch (RuntimeException e) {
-                    errores.add(referencia + ": "
-                            + "datos mal formados: " + e.getMessage());
-                }
-            }
-
+            raiz = mapper.readTree(Path.of(ruta).toFile());
         } catch (IOException e) {
-            throw new IllegalStateException(
-                    "Error al leer JSON " + ruta, e);
+            // No incluir el contenido del archivo dentro del mensaje.
+            throw new IllegalStateException(ruta + ": JSON mal formado o archivo ilegible", e);
         }
-
+        if (raiz == null || !raiz.isArray()) {
+            throw new IllegalStateException(ruta + ": JSON vacio o raiz incorrecta; se requiere un arreglo");
+        }
+        int numero = 0;
+        for (JsonNode nodo : raiz) {
+            String ref = ruta + " registro JSON " + (++numero);
+            if (!nodo.isObject()) {
+                errores.add(ref + ": se esperaba un objeto de venta");
+                continue;
+            }
+            Map<String, String> datos = new HashMap<>();
+            boolean estructuraValida = true;
+            var campos = nodo.properties().iterator();
+            while (campos.hasNext()) {
+                var campo = campos.next();
+                String clave = campo.getKey().strip().toLowerCase(Locale.ROOT);
+                if (!ConversorVenta.CAMPOS.contains(clave) || datos.containsKey(clave)) {
+                    estructuraValida = false;
+                    continue;
+                }
+                JsonNode valor = campo.getValue();
+                if (!valor.isNull() && !valor.isTextual() && !valor.isNumber()) estructuraValida = false;
+                datos.put(clave, valor.isNull() ? "" : valor.asText());
+            }
+            if (!estructuraValida) {
+                errores.add(ref + ": campos desconocidos, repetidos o valores no escalares");
+            } else {
+                new ConversorVenta().agregar(datos, ref, ventas, errores);
+            }
+        }
         return ventas;
-    }
-
-    private String texto(JsonNode nodo, String campo) {
-        JsonNode valor = nodo.get(campo);
-
-        if (valor == null || valor.isNull()
-                || !valor.isValueNode()) {
-            return "";
-        }
-
-        return valor.asText();
     }
 }

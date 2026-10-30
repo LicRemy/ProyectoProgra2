@@ -1,0 +1,50 @@
+EVIDENCIA DE VERIFICACION - 30/10/2026 - America/Guatemala
+
+Entorno: Windows, PostgreSQL 18, Maven incluido en NetBeans.
+Java: Temurin OpenJDK 17.0.20.1, build 17.0.20.1+1.
+Tambien se compilo y probo con JDK 26 y release 17.
+
+Comando desde projectofinalventas:
+  mvn -Dpg.integration=true clean package
+
+Resultado observado en JUnit/Surefire:
+  PostgresTest:       4 pruebas, 0 fallos, 0 errores, 0 omitidas.
+  ProcesamientoTest: 52 pruebas, 0 fallos, 0 errores, 0 omitidas.
+  Total:            56 pruebas, 0 fallos, 0 errores, 0 omitidas.
+  BUILD SUCCESS.
+
+Verificacion independiente del modo normal:
+  mvn test
+  52 pruebas aprobadas y 4 de PostgreSQL explicitamente omitidas.
+  No se interpreta una prueba omitida como una aprobada.
+
+Aislamiento de PostgreSQL:
+  Tabla temporal pg_temp.ventas; search_path = pg_temp.
+  relpersistence = t comprobado antes de insertar.
+  ROLLBACK tras cada prueba.
+  Huella de public.ventas identica antes y despues de cada prueba.
+
+Ejecucion comprobada con Maven y con java -jar:
+  java -DsoloLectura=true -jar target/projectofinalventas-1.0-SNAPSHOT.jar
+  Tres archivos procesados; 11 recibidos, 6 rechazados, 1 duplicado, 4 unicos.
+  0 inserciones nuevas, 4 ventas existentes identicas, 0 fallos JDBC.
+  Ambos reportes generados. Monto SQL: Q11350.00; promedio: Q2837.50.
+
+SHA-256 de las salidas auditadas:
+  reporte_analisis.txt
+  22AA652C280438EEA4DFB21DFE3A31692D9DCFF0CA9C8549DFF9CF61E9A95F68
+  errores_procesamiento.txt
+  133100D2292CE97AEDE45D6E7C12DC54E185DF42545563B1D0D35B3F4B2FE455
+
+Documento PDF: 3 paginas A4, texto extraible y todas las paginas
+renderizadas e inspeccionadas visualmente tras el ultimo ajuste.
+git diff --check: sin errores de espacios al finalizar.
+db.properties: conservado en disco y excluido del seguimiento de Git.
+
+Limites:
+  No se verifico la interfaz de NetBeans: la sesion carece de node_repl,
+  requerido por la habilidad computer-use para controlar aplicaciones.
+  No estan disponibles los casos privados del docente.
+  Conclusiones personales y revision de credenciales historicas pendientes.
+
+No se hicieron commits, push, migraciones ni cambios de ventas personales.

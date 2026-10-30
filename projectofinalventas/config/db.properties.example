@@ -1,0 +1,4 @@
+# Copiar a db.properties. Nunca registrar la copia privada en Git.
+db.url=jdbc:postgresql://localhost:5432/analisis_ventas
+db.user=postgres
+db.password=CAMBIAR_LOCALMENTE

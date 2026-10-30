@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ventas>
+    <venta>
+        <id_venta>V008</id_venta>
+        <fecha>2026-10-09</fecha>
+        <sucursal>Guatemala</sucursal>
+        <codigo_producto>MON002</codigo_producto>
+        <producto>Monitor LG</producto>
+        <cantidad>1</cantidad>
+        <precio_unitario>1500.00</precio_unitario>
+        <vendedor>Pedro</vendedor>
+    </venta>
+    <venta>
+        <id_venta>V010</id_venta>
+        <fecha>2026-10-10</fecha>
+        <sucursal>Zacapa</sucursal>
+        <codigo_producto>USB002</codigo_producto>
+        <producto>Memoria USB</producto>
+        <cantidad>5</cantidad>
+        <precio_unitario>0</precio_unitario>
+        <vendedor>Maria</vendedor>
+    </venta>
+</ventas>

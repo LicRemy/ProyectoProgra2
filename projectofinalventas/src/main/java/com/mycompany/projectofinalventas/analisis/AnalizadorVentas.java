@@ -1,233 +1,192 @@
-
 package com.mycompany.projectofinalventas.analisis;
 
 import com.mycompany.projectofinalventas.datos.ConexionBD;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Locale;
 
+/** Fuente unica de las consultas para consola y reportes. */
 public class AnalizadorVentas {
+    public String analizar(Connection cn) throws SQLException {
+        StringBuilder reporte = new StringBuilder();
+            agregarConsulta(reporte, cn,
+                    "RESUMEN GENERAL",
+                    """
+                    SELECT COUNT(*) AS cantidad,
+                           COALESCE(SUM(cantidad * precio_unitario), 0)
+                               AS monto,
+                           COALESCE(AVG(cantidad * precio_unitario), 0)
+                               AS promedio
+                    FROM ventas
+                    """,
+                    true);
 
-    // 1. RESUMEN GENERAL
-    public void mostrarResumen() throws SQLException {
+            agregarConsulta(reporte, cn,
+                    "VENTAS POR MES",
+                    """
+                    SELECT TO_CHAR(fecha, 'YYYY-MM') AS etiqueta,
+                           COUNT(*) AS transacciones,
+                           SUM(cantidad * precio_unitario) AS monto
+                    FROM ventas
+                    GROUP BY TO_CHAR(fecha, 'YYYY-MM')
+                    ORDER BY etiqueta
+                    """, false);
 
-        String sql = """
-            SELECT
-                COUNT(*) AS transacciones,
-                COALESCE(SUM(cantidad * precio_unitario), 0)
-                    AS total,
-                COALESCE(AVG(cantidad * precio_unitario), 0)
-                    AS promedio
-            FROM ventas
-            """;
+            agregarConsulta(reporte, cn,
+                    "VENTAS POR SUCURSAL",
+                    """
+                    SELECT upper(sucursal) AS etiqueta,
+                           COUNT(*) AS transacciones,
+                           SUM(cantidad * precio_unitario) AS monto
+                    FROM ventas
+                    GROUP BY upper(sucursal)
+                    ORDER BY monto DESC, etiqueta
+                    """, false);
 
-        try (Connection cn = ConexionBD.conectar();
-             PreparedStatement ps = cn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+            agregarConsulta(reporte, cn,
+                    "VENTAS POR PRODUCTO",
+                    """
+                    SELECT upper(codigo_producto) || ' - ' || upper(producto)
+                               AS etiqueta,
+                           COUNT(*) AS transacciones,
+                           SUM(cantidad * precio_unitario) AS monto
+                    FROM ventas
+                    GROUP BY upper(codigo_producto), upper(producto)
+                    ORDER BY monto DESC, etiqueta
+                    """, false);
 
-            if (rs.next()) {
-                System.out.println("\n=== RESUMEN GENERAL ===");
-                System.out.println("Transacciones: "
-                        + rs.getInt("transacciones"));
+            agregarConsulta(reporte, cn,
+                    "VENTAS POR VENDEDOR",
+                    """
+                    SELECT upper(vendedor) AS etiqueta,
+                           COUNT(*) AS transacciones,
+                           SUM(cantidad * precio_unitario) AS monto
+                    FROM ventas
+                    GROUP BY upper(vendedor)
+                    ORDER BY monto DESC, etiqueta
+                    """, false);
 
-                imprimirDinero("Total vendido",
-                        rs.getBigDecimal("total"));
+            agregarConsulta(reporte, cn,
+                    "TOP 3 VENDEDORES",
+                    """
+                    SELECT upper(vendedor) AS etiqueta,
+                           COUNT(*) AS transacciones,
+                           SUM(cantidad * precio_unitario) AS monto
+                    FROM ventas
+                    GROUP BY upper(vendedor)
+                    ORDER BY monto DESC, etiqueta
+                    LIMIT 3
+                    """, false);
 
-                imprimirDinero("Promedio por transaccion",
-                        rs.getBigDecimal("promedio"));
-            }
+            String productos = """
+                    SELECT upper(codigo_producto) || ' - ' || upper(producto)
+                               AS etiqueta,
+                           COUNT(*) AS transacciones,
+                           SUM(cantidad * precio_unitario) AS monto
+                    FROM ventas
+                    GROUP BY upper(codigo_producto), upper(producto)
+                    """;
+
+            agregarConsulta(reporte, cn,
+                    "PRODUCTO CON MAYOR MONTO",
+                    productos + " ORDER BY monto DESC, etiqueta LIMIT 1",
+                    false);
+
+            agregarConsulta(reporte, cn,
+                    "PRODUCTO CON MENOR MONTO",
+                    productos + " ORDER BY monto ASC, etiqueta LIMIT 1",
+                    false);
+
+            String transacciones = """
+                    SELECT id_venta AS etiqueta,
+                           1 AS transacciones,
+                           cantidad * precio_unitario AS monto
+                    FROM ventas
+                    """;
+
+            agregarConsulta(reporte, cn,
+                    "TRANSACCION DE MAYOR MONTO",
+                    transacciones
+                            + " ORDER BY monto DESC, etiqueta LIMIT 1",
+                    false);
+
+            agregarConsulta(reporte, cn,
+                    "TRANSACCION DE MENOR MONTO",
+                    transacciones
+                            + " ORDER BY monto ASC, etiqueta LIMIT 1",
+                    false);
+        return reporte.toString();
+    }
+
+    public String analizar() throws SQLException {
+        try (Connection cn = ConexionBD.conectar()) {
+            cn.setReadOnly(true);
+            cn.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+            cn.setAutoCommit(false);
+            String resultado = analizar(cn);
+            cn.commit();
+            return resultado;
         }
     }
 
-    // 2. MOSTRAR TABLAS AGRUPADAS
-    private void mostrarAgrupacion(String titulo, String sql)
+    public void mostrarAnalisisCompleto() throws SQLException {
+        System.out.print(analizar());
+    }
+
+    private void agregarConsulta(
+            StringBuilder reporte,
+            Connection cn,
+            String titulo,
+            String sql,
+            boolean resumen)
             throws SQLException {
 
-        System.out.println("\n=== " + titulo + " ===");
+        reporte.append("\n").append(titulo).append("\n");
+        reporte.append("--------------------------------\n");
 
-        try (Connection cn = ConexionBD.conectar();
-             PreparedStatement ps = cn.prepareStatement(sql);
+        try (PreparedStatement ps = cn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
-            boolean hayDatos = false;
+            boolean contieneDatos = false;
 
             while (rs.next()) {
-                hayDatos = true;
+                contieneDatos = true;
 
-                System.out.println(
-                        rs.getString("etiqueta")
-                        + " | Ventas: "
-                        + rs.getLong("transacciones")
-                        + " | Monto: Q"
-                        + rs.getBigDecimal("monto"));
+                if (resumen) {
+                    reporte.append("Transacciones almacenadas: ")
+                            .append(rs.getLong("cantidad"))
+                            .append("\n");
+
+                    reporte.append("Monto total: ")
+                            .append(dinero(rs.getBigDecimal("monto")))
+                            .append("\n");
+
+                    reporte.append("Promedio por transaccion: ")
+                            .append(dinero(rs.getBigDecimal("promedio")))
+                            .append("\n");
+
+                } else {
+                    reporte.append(rs.getString("etiqueta"))
+                            .append(" | Transacciones: ")
+                            .append(rs.getLong("transacciones"))
+                            .append(" | Monto: ")
+                            .append(dinero(rs.getBigDecimal("monto")))
+                            .append("\n");
+                }
             }
 
-            if (!hayDatos) {
-                System.out.println("Sin registros.");
-            }
-        }
-    }
-
-    // 3. VENTAS POR MES
-    public void mostrarPorMes() throws SQLException {
-
-        String sql = """
-            SELECT
-                TO_CHAR(fecha, 'YYYY-MM') AS etiqueta,
-                COUNT(*) AS transacciones,
-                SUM(cantidad * precio_unitario) AS monto
-            FROM ventas
-            GROUP BY TO_CHAR(fecha, 'YYYY-MM')
-            ORDER BY etiqueta
-            """;
-
-        mostrarAgrupacion("VENTAS POR MES", sql);
-    }
-
-    // 4. VENTAS POR SUCURSAL
-    public void mostrarPorSucursal() throws SQLException {
-
-        String sql = """
-            SELECT
-                sucursal AS etiqueta,
-                COUNT(*) AS transacciones,
-                SUM(cantidad * precio_unitario) AS monto
-            FROM ventas
-            GROUP BY sucursal
-            ORDER BY monto DESC, etiqueta
-            """;
-
-        mostrarAgrupacion("VENTAS POR SUCURSAL", sql);
-    }
-
-    // 5. VENTAS POR PRODUCTO
-    public void mostrarPorProducto() throws SQLException {
-
-        String sql = """
-            SELECT
-                codigo_producto || ' - ' || producto AS etiqueta,
-                COUNT(*) AS transacciones,
-                SUM(cantidad * precio_unitario) AS monto
-            FROM ventas
-            GROUP BY codigo_producto, producto
-            ORDER BY monto DESC, etiqueta
-            """;
-
-        mostrarAgrupacion("VENTAS POR PRODUCTO", sql);
-    }
-
-    // 6. VENTAS POR VENDEDOR
-    public void mostrarPorVendedor() throws SQLException {
-
-        String sql = """
-            SELECT
-                vendedor AS etiqueta,
-                COUNT(*) AS transacciones,
-                SUM(cantidad * precio_unitario) AS monto
-            FROM ventas
-            GROUP BY vendedor
-            ORDER BY monto DESC, etiqueta
-            """;
-
-        mostrarAgrupacion("VENTAS POR VENDEDOR", sql);
-    }
-
-    // 7. TOP 3 VENDEDORES
-    public void mostrarTopVendedores() throws SQLException {
-
-        String sql = """
-            SELECT
-                vendedor AS etiqueta,
-                COUNT(*) AS transacciones,
-                SUM(cantidad * precio_unitario) AS monto
-            FROM ventas
-            GROUP BY vendedor
-            ORDER BY monto DESC, etiqueta
-            LIMIT 3
-            """;
-
-        mostrarAgrupacion("TOP 3 VENDEDORES", sql);
-    }
-
-    // 8. PRODUCTOS EXTREMOS POR MONTO
-    public void mostrarProductosExtremos() throws SQLException {
-
-        String base = """
-            SELECT
-                codigo_producto || ' - ' || producto AS etiqueta,
-                COUNT(*) AS transacciones,
-                SUM(cantidad * precio_unitario) AS monto
-            FROM ventas
-            GROUP BY codigo_producto, producto
-            """;
-
-        mostrarExtremo("PRODUCTO MAYOR MONTO",
-                base + " ORDER BY monto DESC, etiqueta LIMIT 1");
-
-        mostrarExtremo("PRODUCTO MENOR MONTO",
-                base + " ORDER BY monto ASC, etiqueta LIMIT 1");
-    }
-
-    // 9. TRANSACCIONES EXTREMAS
-    public void mostrarTransaccionesExtremas()
-            throws SQLException {
-
-        String base = """
-            SELECT
-                id_venta AS etiqueta,
-                1 AS transacciones,
-                cantidad * precio_unitario AS monto
-            FROM ventas
-            """;
-
-        mostrarExtremo("TRANSACCION MAYOR MONTO",
-                base + " ORDER BY monto DESC, etiqueta LIMIT 1");
-
-        mostrarExtremo("TRANSACCION MENOR MONTO",
-                base + " ORDER BY monto ASC, etiqueta LIMIT 1");
-    }
-
-    private void mostrarExtremo(String titulo, String sql)
-            throws SQLException {
-
-        System.out.println("\n=== " + titulo + " ===");
-
-        try (Connection cn = ConexionBD.conectar();
-             PreparedStatement ps = cn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            if (rs.next()) {
-                System.out.println("Registro: "
-                        + rs.getString("etiqueta"));
-
-                imprimirDinero("Monto",
-                        rs.getBigDecimal("monto"));
-            } else {
-                System.out.println("Sin registros.");
+            if (!contieneDatos) {
+                reporte.append("Sin registros.\n");
             }
         }
     }
 
-    private void imprimirDinero(
-            String descripcion, BigDecimal valor) {
-
-        System.out.printf("%s: Q%.2f%n", descripcion, valor);
+    private String dinero(BigDecimal valor) {
+        return "Q" + String.format(
+                Locale.ROOT, "%.2f", valor);
     }
 
-    // EJECUTAR TODOS LOS ANALISIS
-    public void mostrarAnalisisCompleto()
-            throws SQLException {
-
-        mostrarResumen();
-        mostrarPorMes();
-        mostrarPorSucursal();
-        mostrarPorProducto();
-        mostrarPorVendedor();
-        mostrarProductosExtremos();
-        mostrarTransaccionesExtremas();
-        mostrarTopVendedores();
-    }
 }

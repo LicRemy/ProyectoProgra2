@@ -1,8 +1,7 @@
-entrada/ventas.csv linea 2 ID=id_venta: fecha invalida
-entrada/ventas.csv linea 4 ID=V002: Cantidad debe ser mayor que cero
-entrada/ventas.csv linea 5 ID=V003: Sucursal vacia
-entrada/ventas.csv linea 6 ID=V004: fecha invalida
-entrada/ventas.csv linea 8 ID=V006: Precio debe ser mayor que cero
-entrada/ventas.json registro 2 ID=V009: Cantidad debe ser mayor que cero
-entrada/ventas.xml registro 2 ID=V010: Precio debe ser mayor que cero
-Venta duplicada. ID: V001
+entrada\ventas.csv registro CSV 3 ID=V002: Cantidad debe ser mayor que cero
+entrada\ventas.csv registro CSV 4 ID=V003: Sucursal vacia
+entrada\ventas.csv registro CSV 5 ID=V004: fecha invalida: se requiere yyyy-MM-dd y una fecha real; Fecha vacia o invalida
+entrada\ventas.csv registro CSV 7 ID=V006: Precio debe ser mayor que cero
+entrada\ventas.json registro JSON 2 ID=V009: Cantidad debe ser mayor que cero
+entrada\ventas.xml registro XML 2 ID=V010: Precio debe ser mayor que cero
+entrada\ventas.json registro JSON 3 ID=V001: duplicado identico; se conserva el primero de entrada\ventas.csv registro CSV 2

@@ -1,19 +1,29 @@
 SISTEMA DE INTEGRACION Y ANALISIS DE VENTAS
 =========================================
+ESTADO: PROCESAMIENTO COMPLETO
 
 ESTADISTICAS DE ESTA EJECUCION
 --------------------------------
-Registros recibidos: 12
-Validos antes de duplicados: 5
-Rechazados por validacion: 7
-Duplicados entre archivos: 1
-Registros unicos: 4
-Porcentaje de rechazados: 58.33%
-Insertados en PostgreSQL: 0
-Ya existentes en PostgreSQL: 4
-Fallos de insercion SQL: 0
+Archivos procesados: 3
 Archivos fallidos: 0
+Registros recibidos: 11
+Validos antes de duplicados: 5
+Aceptados unicos: 4
+Rechazados por validacion: 6
+Duplicados entre archivos: 1
+Porcentaje de rechazados: 54.55%
+Insertados en PostgreSQL: 0
+Ya existentes identicos en PostgreSQL: 4
+Conflictos con PostgreSQL: 0
+Fallos de insercion SQL: 0
+Definicion: rechazados / recibidos * 100; cero si no hay registros.
+recibidos = validos + rechazados; validos = unicos + duplicados.
+unicos = insertados + existentes + conflictos + fallosBD.
+Los archivos ilegibles no aportan registros: su cantidad es desconocida.
+Los duplicados NO son rechazos de validacion.
 
+INDICADORES ACUMULADOS EN POSTGRESQL (instantanea consistente)
+Los nombres se agrupan sin distinguir mayusculas; montos expresados en Q.
 
 RESUMEN GENERAL
 --------------------------------
@@ -32,30 +42,30 @@ GUATEMALA | Transacciones: 1 | Monto: Q1500.00
 
 VENTAS POR PRODUCTO
 --------------------------------
-LAP001 - Laptop | Transacciones: 1 | Monto: Q9000.00
-MON002 - Monitor LG | Transacciones: 1 | Monto: Q1500.00
-TEC001 - Teclado | Transacciones: 1 | Monto: Q500.00
-TEC002 - Teclado mecanico | Transacciones: 1 | Monto: Q350.00
+LAP001 - LAPTOP | Transacciones: 1 | Monto: Q9000.00
+MON002 - MONITOR LG | Transacciones: 1 | Monto: Q1500.00
+TEC001 - TECLADO | Transacciones: 1 | Monto: Q500.00
+TEC002 - TECLADO MECANICO | Transacciones: 1 | Monto: Q350.00
 
 VENTAS POR VENDEDOR
 --------------------------------
-Carlos | Transacciones: 2 | Monto: Q9500.00
-Pedro | Transacciones: 1 | Monto: Q1500.00
-Luis | Transacciones: 1 | Monto: Q350.00
+CARLOS | Transacciones: 2 | Monto: Q9500.00
+PEDRO | Transacciones: 1 | Monto: Q1500.00
+LUIS | Transacciones: 1 | Monto: Q350.00
 
 TOP 3 VENDEDORES
 --------------------------------
-Carlos | Transacciones: 2 | Monto: Q9500.00
-Pedro | Transacciones: 1 | Monto: Q1500.00
-Luis | Transacciones: 1 | Monto: Q350.00
+CARLOS | Transacciones: 2 | Monto: Q9500.00
+PEDRO | Transacciones: 1 | Monto: Q1500.00
+LUIS | Transacciones: 1 | Monto: Q350.00
 
 PRODUCTO CON MAYOR MONTO
 --------------------------------
-LAP001 - Laptop | Transacciones: 1 | Monto: Q9000.00
+LAP001 - LAPTOP | Transacciones: 1 | Monto: Q9000.00
 
 PRODUCTO CON MENOR MONTO
 --------------------------------
-TEC002 - Teclado mecanico | Transacciones: 1 | Monto: Q350.00
+TEC002 - TECLADO MECANICO | Transacciones: 1 | Monto: Q350.00
 
 TRANSACCION DE MAYOR MONTO
 --------------------------------
@@ -65,6 +75,13 @@ TRANSACCION DE MENOR MONTO
 --------------------------------
 V005 | Transacciones: 1 | Monto: Q350.00
 
-CONCLUSIONES DE LOS ESTUDIANTES
+CONCLUSIONES PERSONALES PENDIENTES
 --------------------------------
-PENDIENTE: redactar tres conclusiones por cada estudiante basadas en los datos reales.
+Jonathan Daniel Alberto Aguilar Ramirez:
+1. [Redactar interpretacion propia apoyada en un indicador real]
+2. [Explicar una limitacion o problema de calidad observado]
+3. [Proponer una accion justificada por los resultados]
+Luis Alberto Matta Rubio:
+1. [Redactar interpretacion propia apoyada en un indicador real]
+2. [Explicar una limitacion o problema de calidad observado]
+3. [Proponer una accion justificada por los resultados]
