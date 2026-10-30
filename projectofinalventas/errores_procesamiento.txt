@@ -1,0 +1,5 @@
+entrada/ventas.csv linea 2 ID=id_venta: fecha invalida
+entrada/ventas.csv linea 4 ID=V002: Cantidad debe ser mayor que cero
+entrada/ventas.csv linea 5 ID=V003: Sucursal vacia
+entrada/ventas.csv linea 6 ID=V004: fecha invalida
+entrada/ventas.csv linea 8 ID=V006: Precio debe ser mayor que cero

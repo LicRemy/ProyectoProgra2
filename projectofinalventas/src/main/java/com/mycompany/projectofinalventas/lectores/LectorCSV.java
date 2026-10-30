@@ -2,6 +2,7 @@
 package com.mycompany.projectofinalventas.lectores;
 
 import com.mycompany.projectofinalventas.modelo.RegistroVenta;
+import com.mycompany.projectofinalventas.validacion.ValidadorVenta;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,13 +13,17 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class LectorCSV {
 
-    public ArrayList<RegistroVenta> leer(String ruta) {
+    private final ValidadorVenta validador =
+            new ValidadorVenta();
 
-        ArrayList<RegistroVenta> ventas = new ArrayList<>();
+    public List<RegistroVenta> leer(
+            String ruta, List<String> errores) {
 
+        List<RegistroVenta> ventas = new ArrayList<>();
         Path archivo = Path.of(ruta);
 
         try (BufferedReader lector = Files.newBufferedReader(
@@ -28,82 +33,67 @@ public class LectorCSV {
             int numeroLinea = 0;
 
             while ((linea = lector.readLine()) != null) {
-
                 numeroLinea++;
 
-                // La primera fila contiene los encabezados
+                // Primera fila: encabezado
                 if (numeroLinea == 1) {
                     continue;
                 }
 
-                // Ignorar filas completamente vacias
                 if (linea.isBlank()) {
                     continue;
                 }
 
-                // Separar los ocho campos
+                // Este lector admite CSV sencillo
                 String[] datos = linea.split(",", -1);
 
                 if (datos.length != 8) {
-                    System.out.println(
-                            "Error en linea " + numeroLinea
-                            + ": se esperaban 8 campos.");
+                    errores.add(ruta + " linea " + numeroLinea
+                            + ": se esperaban 8 campos");
                     continue;
                 }
 
                 try {
-
-                    String id = datos[0].trim();
-
-                    LocalDate fecha = LocalDate.parse(
-                            datos[1].trim());
-
-                    String sucursal = datos[2].trim();
-
-                    String codigo = datos[3].trim();
-
-                    String producto = datos[4].trim();
-
-                    int cantidad = Integer.parseInt(
-                            datos[5].trim());
-
-                    BigDecimal precio = new BigDecimal(
-                            datos[6].trim());
-
-                    String vendedor = datos[7].trim();
-
-                    RegistroVenta venta = new RegistroVenta(
-                            id,
-                            fecha,
-                            sucursal,
-                            codigo,
-                            producto,
-                            cantidad,
-                            precio,
-                            vendedor
+                    RegistroVenta original = new RegistroVenta(
+                            datos[0],
+                            LocalDate.parse(datos[1].trim()),
+                            datos[2],
+                            datos[3],
+                            datos[4],
+                            Integer.parseInt(datos[5].trim()),
+                            new BigDecimal(datos[6].trim()),
+                            datos[7]
                     );
 
-                    ventas.add(venta);
+                    RegistroVenta normalizada =
+                            validador.normalizar(original);
+
+                    List<String> problemas =
+                            validador.validar(normalizada);
+
+                    if (problemas.isEmpty()) {
+                        ventas.add(normalizada);
+                    } else {
+                        errores.add(ruta + " linea " + numeroLinea
+                                + " ID=" + datos[0].trim()
+                                + ": " + String.join("; ", problemas));
+                    }
 
                 } catch (DateTimeParseException e) {
-
-                    System.out.println(
-                            "Fecha incorrecta en linea "
-                            + numeroLinea);
+                    errores.add(ruta + " linea " + numeroLinea
+                            + " ID=" + datos[0].trim()
+                            + ": fecha invalida");
 
                 } catch (NumberFormatException e) {
-
-                    System.out.println(
-                            "Numero incorrecto en linea "
-                            + numeroLinea);
+                    errores.add(ruta + " linea " + numeroLinea
+                            + " ID=" + datos[0].trim()
+                            + ": cantidad o precio invalido");
                 }
             }
 
         } catch (IOException e) {
-
-            System.out.println(
-                    "Error al leer archivo " + ruta
-                    + ": " + e.getMessage());
+            throw new IllegalStateException(
+                    "No se pudo leer " + ruta, e);
         }
 
         return ventas;
