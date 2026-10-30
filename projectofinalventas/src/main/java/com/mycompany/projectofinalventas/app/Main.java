@@ -9,6 +9,8 @@ import com.mycompany.projectofinalventas.lectores.LectorJSON;
 import com.mycompany.projectofinalventas.lectores.LectorXML;
 import com.mycompany.projectofinalventas.validacion.DeduplicadorVentas;
 import com.mycompany.projectofinalventas.datos.VentaDAO;
+import com.mycompany.projectofinalventas.modelo.EstadisticasProcesamiento;
+import com.mycompany.projectofinalventas.reportes.GeneradorReportes;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -24,9 +26,16 @@ public class Main {
 
         System.out.println("=== INTEGRACION DE VENTAS ===");
 
+        
+        
+        EstadisticasProcesamiento estadisticas =
+        new EstadisticasProcesamiento();
+            
         List<RegistroVenta> ventas = new ArrayList<>();
         List<String> errores = new ArrayList<>();
 
+        int erroresAntesLectura = errores.size();
+        
         LectorCSV csv = new LectorCSV();
         LectorJSON json = new LectorJSON();
         LectorXML xml = new LectorXML();
@@ -37,6 +46,7 @@ public class Main {
             System.out.println("CSV procesado.");
         } catch (IllegalStateException e) {
             errores.add("CSV: " + e.getMessage());
+            estadisticas.archivosFallidos++;
         }
 
         try {
@@ -44,6 +54,7 @@ public class Main {
             System.out.println("JSON procesado.");
         } catch (IllegalStateException e) {
             errores.add("JSON: " + e.getMessage());
+            estadisticas.archivosFallidos++;
         }
 
         try {
@@ -51,7 +62,14 @@ public class Main {
             System.out.println("XML procesado.");
         } catch (IllegalStateException e) {
             errores.add("XML: " + e.getMessage());
+            estadisticas.archivosFallidos++;
         }
+
+        estadisticas.validos = ventas.size();
+        estadisticas.rechazados =
+                errores.size() - erroresAntesLectura;
+        estadisticas.recibidos =
+                estadisticas.validos + estadisticas.rechazados;
 
         // Contar registros que pasaron la validacion
         int validadas = ventas.size();
@@ -62,6 +80,11 @@ public class Main {
 
         List<RegistroVenta> ventasUnicas =
                 deduplicador.eliminarDuplicados(ventas, errores);
+        
+        estadisticas.duplicados =
+        deduplicador.getDuplicados();
+
+estadisticas.unicos = ventasUnicas.size();
         
         
 VentaDAO dao = new VentaDAO();
@@ -90,6 +113,10 @@ for (RegistroVenta venta : ventasUnicas) {
                 + ": " + e.getMessage());
     }
 }
+
+estadisticas.insertados = insertadas;
+estadisticas.existentesBD = existentes;
+estadisticas.fallosBD = fallosBD;
 
 System.out.println("\n=== RESULTADO POSTGRESQL ===");
 
@@ -142,6 +169,21 @@ try {
 
             System.out.println(
                     "Error al guardar incidencias: "
+                    + e.getMessage());
+        }
+
+        GeneradorReportes generador = new GeneradorReportes();
+
+        try {
+            generador.generar(estadisticas, errores);
+
+            System.out.println("\nREPORTES GENERADOS:");
+            System.out.println("reporte_analisis.txt");
+            System.out.println("errores_procesamiento.txt");
+
+        } catch (IOException | SQLException e) {
+            System.out.println(
+                    "No se pudieron generar los reportes: "
                     + e.getMessage());
         }
     }
