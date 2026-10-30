@@ -1,0 +1,23 @@
+
+[
+  {
+    "id_venta": "V007",
+    "fecha": "2026-10-07",
+    "sucursal": "Chiquimula",
+    "codigo_producto": "LAP001",
+    "producto": "Laptop",
+    "cantidad": 2,
+    "precio_unitario": 4500.00,
+    "vendedor": "Carlos"
+  },
+  {
+    "id_venta": "V009",
+    "fecha": "2026-10-08",
+    "sucursal": "Zacapa",
+    "codigo_producto": "MOU002",
+    "producto": "Mouse inalambrico",
+    "cantidad": -3,
+    "precio_unitario": 125.00,
+    "vendedor": "Ana"
+  }
+]
