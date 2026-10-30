@@ -1,4 +1,6 @@
 
+
+
 [
   {
     "id_venta": "V007",
@@ -19,5 +21,15 @@
     "cantidad": -3,
     "precio_unitario": 125.00,
     "vendedor": "Ana"
+  },
+  {
+    "id_venta": "v001",
+    "fecha": "2026-10-01",
+    "sucursal": "Chiquimula",
+    "codigo_producto": "TEC001",
+    "producto": "Teclado",
+    "cantidad": 2,
+    "precio_unitario": 250.00,
+    "vendedor": "Carlos"
   }
 ]
