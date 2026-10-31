@@ -41,16 +41,8 @@ public class GeneradorReportes {
     private void publicar(EstadisticasProcesamiento e, Path salida, String analisis) throws IOException {
         String conclusiones = """
 
-                CONCLUSIONES PERSONALES PENDIENTES
-                --------------------------------
-                Jonathan Daniel Alberto Aguilar Ramirez:
-                1. [Redactar interpretacion propia apoyada en un indicador real]
-                2. [Explicar una limitacion o problema de calidad observado]
-                3. [Proponer una accion justificada por los resultados]
-                Luis Alberto Matta Rubio:
-                1. [Redactar interpretacion propia apoyada en un indicador real]
-                2. [Explicar una limitacion o problema de calidad observado]
-                3. [Proponer una accion justificada por los resultados]
+                
+                -
                 """;
         guardar(salida.resolve("reporte_analisis.txt"),
                 "SISTEMA DE INTEGRACION Y ANALISIS DE VENTAS\n"

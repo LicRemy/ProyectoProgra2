@@ -75,13 +75,4 @@ TRANSACCION DE MENOR MONTO
 --------------------------------
 V005 | Transacciones: 1 | Monto: Q350.00
 
-CONCLUSIONES PERSONALES PENDIENTES
---------------------------------
-Jonathan Daniel Alberto Aguilar Ramirez:
-1. [Redactar interpretacion propia apoyada en un indicador real]
-2. [Explicar una limitacion o problema de calidad observado]
-3. [Proponer una accion justificada por los resultados]
-Luis Alberto Matta Rubio:
-1. [Redactar interpretacion propia apoyada en un indicador real]
-2. [Explicar una limitacion o problema de calidad observado]
-3. [Proponer una accion justificada por los resultados]
+
